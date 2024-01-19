@@ -1,0 +1,5 @@
+-   id: sort-lines
+    name: Sort lines
+    language: python
+    types: [text]
+    entry: sort-lines
