@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+## v0.1.1 (2024-01-22)
+
 ### Fixed
 
 - `pre-commit` example configuration in README used an incorrect project/hook name
