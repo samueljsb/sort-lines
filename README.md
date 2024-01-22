@@ -40,8 +40,8 @@ This tool can be used with [pre-commit](https://pre-commit.com):
 
 ```yaml
 repos:
--   repo: https://github.com/samueljsb/sort-files
+-   repo: https://github.com/samueljsb/sort-lines
     rev: v0.1.0
     hooks:
-    -   id: sort-files
+    -   id: sort-lines
 ```
