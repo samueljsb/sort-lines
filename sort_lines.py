@@ -15,7 +15,7 @@ def sort_lines(lines: Sequence[str]) -> Iterator[str]:
                 indentation = line.removesuffix(line.lstrip())
                 to_sort.append(line)
                 continue
-            elif line and line.startswith(indentation):  # line to sort
+            elif line.strip() and line.startswith(indentation):  # line to sort
                 to_sort.append(line)
                 continue
             else:  # sorting has ended

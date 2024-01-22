@@ -9,33 +9,33 @@ from sort_lines import sort_lines
 class TestSortLines:
     def test_sort_lines(self):
         lines = [
-            '# pragma: alphabetize',
-            'Bob',
-            'Alice',
-            'Eve',
-            'David',
-            'Charlie',
+            '# pragma: alphabetize\n',
+            'Bob\n',
+            'Alice\n',
+            'Eve\n',
+            'David\n',
+            'Charlie\n',
         ]
 
         sorted_lines = list(sort_lines(lines))
 
         assert sorted_lines == [
-            '# pragma: alphabetize',
-            'Alice',
-            'Bob',
-            'Charlie',
-            'David',
-            'Eve',
+            '# pragma: alphabetize\n',
+            'Alice\n',
+            'Bob\n',
+            'Charlie\n',
+            'David\n',
+            'Eve\n',
         ]
 
     def test_already_sorted(self):
         lines = [
-            '# pragma: alphabetize',
-            'Alice',
-            'Bob',
-            'Charlie',
-            'David',
-            'Eve',
+            '# pragma: alphabetize\n',
+            'Alice\n',
+            'Bob\n',
+            'Charlie\n',
+            'David\n',
+            'Eve\n',
         ]
 
         sorted_lines = list(sort_lines(lines))
@@ -44,46 +44,46 @@ class TestSortLines:
 
     def test_sorting_stops_when_indentation_changes(self):
         lines = [
-            '# pragma: alphabetize',
-            '    Bob',
-            '    Alice',
-            '    Eve',
-            'David',
-            'Charlie',
+            '# pragma: alphabetize\n',
+            '    Bob\n',
+            '    Alice\n',
+            '    Eve\n',
+            'David\n',
+            'Charlie\n',
         ]
 
         sorted_lines = list(sort_lines(lines))
 
         assert sorted_lines == [
-            '# pragma: alphabetize',
-            '    Alice',
-            '    Bob',
-            '    Eve',
-            'David',
-            'Charlie',
+            '# pragma: alphabetize\n',
+            '    Alice\n',
+            '    Bob\n',
+            '    Eve\n',
+            'David\n',
+            'Charlie\n',
         ]
 
     def test_sorting_stops_at_empty_line(self):
         lines = [
-            '# pragma: alphabetize',
-            'Bob',
-            'Alice',
-            'Eve',
-            '',
-            'David',
-            'Charlie',
+            '# pragma: alphabetize\n',
+            'Bob\n',
+            'Alice\n',
+            'Eve\n',
+            '\n',
+            'David\n',
+            'Charlie\n',
         ]
 
         sorted_lines = list(sort_lines(lines))
 
         assert sorted_lines == [
-            '# pragma: alphabetize',
-            'Alice',
-            'Bob',
-            'Eve',
-            '',
-            'David',
-            'Charlie',
+            '# pragma: alphabetize\n',
+            'Alice\n',
+            'Bob\n',
+            'Eve\n',
+            '\n',
+            'David\n',
+            'Charlie\n',
         ]
 
 
