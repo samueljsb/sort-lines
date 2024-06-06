@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 from collections.abc import Iterator
 from collections.abc import Sequence
 
 
+def case_sensitive_sort(lines: Sequence[str]) -> list[str]:
+    return sorted(lines)
+
+
 def sort_lines(lines: Sequence[str]) -> Iterator[str]:
-    sorting = False
+    sorter: Callable[[Sequence[str]], Sequence[str]] | None = None
     indentation: str | None = None
     to_sort: list[str] = []
     for line in lines:
-        if sorting:
+        if sorter:
             if indentation is None:  # first line
                 indentation = line.removesuffix(line.lstrip())
                 to_sort.append(line)
@@ -19,18 +24,18 @@ def sort_lines(lines: Sequence[str]) -> Iterator[str]:
                 to_sort.append(line)
                 continue
             else:  # sorting has ended
-                yield from sorted(to_sort)
-                sorting = False
+                yield from sorter(to_sort)
+                sorter = None
 
         if '# pragma: alphabetize' in line:  # start sorting
-            sorting = True
+            sorter = case_sensitive_sort
             to_sort = []
             indentation = None  # not known yet
 
         yield line
     else:
-        if sorting:  # file ended during sorting
-            yield from sorted(to_sort)
+        if sorter:  # file ended during sorting
+            yield from sorter(to_sort)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
