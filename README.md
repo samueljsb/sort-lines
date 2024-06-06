@@ -47,6 +47,8 @@ names = [  # pragma: alphabetize[case-insensitive]
 ]
 ```
 
+Or by passing `--case-insensitive` on the command line.
+
 ## pre-commit
 
 This tool can be used with [pre-commit](https://pre-commit.com):
