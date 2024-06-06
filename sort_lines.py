@@ -6,7 +6,11 @@ from collections.abc import Iterator
 from collections.abc import Sequence
 
 
-def case_sensitive_sort(lines: Sequence[str]) -> list[str]:
+def get_sorter(line: str) -> Callable[[Sequence[str]], Sequence[str]]:
+    return _case_sensitive_sort
+
+
+def _case_sensitive_sort(lines: Sequence[str]) -> list[str]:
     return sorted(lines)
 
 
@@ -28,7 +32,7 @@ def sort_lines(lines: Sequence[str]) -> Iterator[str]:
                 sorter = None
 
         if '# pragma: alphabetize' in line:  # start sorting
-            sorter = case_sensitive_sort
+            sorter = _get_sorter(line)
             to_sort = []
             indentation = None  # not known yet
 
