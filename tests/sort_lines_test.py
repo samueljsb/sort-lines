@@ -1,9 +1,70 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from pathlib import Path
 
+import pytest
+
+from sort_lines import _case_insensitive_sort
+from sort_lines import _case_sensitive_sort
+from sort_lines import _get_sorter
 from sort_lines import main
 from sort_lines import sort_lines
+
+
+def _default_sorter(lines: Sequence[str]) -> list[str]:
+    raise RuntimeError  # should never use this  # pragma: no cover
+
+
+class TestGetSorter:
+    @pytest.mark.parametrize(
+        'line',
+        (
+            # bare pragma
+            '# pragma: alphabetize\n',
+            'some_values = [  # pragma: alphabetize\n',
+        ),
+    )
+    def test_default_sorter(self, line: str) -> None:
+        sorter = _get_sorter(line, _default_sorter)
+        assert sorter is _default_sorter
+
+    @pytest.mark.parametrize(
+        'line',
+        (
+            # 'case-insensitive' option
+            '# pragma: alphabetize[case-sensitive]\n',
+            'some_values = [  # pragma: alphabetize[case-sensitive]\n',
+            # 'ci' option
+            '# pragma: alphabetize[cs]\n',
+            'some_values = [  # pragma: alphabetize[cs]\n',
+        ),
+    )
+    def test_case_sensitive(self, line: str) -> None:
+        sorter = _get_sorter(line, _default_sorter)
+        assert sorter is _case_sensitive_sort
+
+    @pytest.mark.parametrize(
+        'line',
+        (
+            # 'case-insensitive' option
+            '# pragma: alphabetize[case-insensitive]\n',
+            'some_values = [  # pragma: alphabetize[case-insensitive]\n',
+            # 'ci' option
+            '# pragma: alphabetize[ci]\n',
+            'some_values = [  # pragma: alphabetize[ci]\n',
+        ),
+    )
+    def test_case_insensitive(self, line: str) -> None:
+        sorter = _get_sorter(line, _default_sorter)
+        assert sorter is _case_insensitive_sort
+
+    def test_unknown_options(self) -> None:
+        with pytest.raises(
+            ValueError,
+            match=r"unrecognised options: '\[sort-lines\]'",
+        ):
+            _get_sorter('# pragma: alphabetize[sort-lines]\n', _default_sorter)
 
 
 class TestSortLines:
@@ -26,6 +87,27 @@ class TestSortLines:
             'Charlie\n',
             'David\n',
             'Eve\n',
+        ]
+
+    def test_case_insensitive(self):
+        lines = [
+            '# pragma: alphabetize[case-insensitive]\n',
+            'Bob\n',
+            'alice\n',
+            'eve\n',
+            'David\n',
+            'charlie\n',
+        ]
+
+        sorted_lines = list(sort_lines(lines))
+
+        assert sorted_lines == [
+            '# pragma: alphabetize[case-insensitive]\n',
+            'alice\n',
+            'Bob\n',
+            'charlie\n',
+            'David\n',
+            'eve\n',
         ]
 
     def test_already_sorted(self):
@@ -184,6 +266,30 @@ animals = [  # pragma: alphabetize
     'Elephant',
     'Lion',
 ]
+
+# a list to sort with default sorting (case-sensitive)
+scientists = [  # pragma: alphabetize
+    'von Neumann',
+    'Mandelbrot'
+    'Cantor',
+    'Willbanks',
+]
+
+# a list to sort case-sensitive
+scientists = [  # pragma: alphabetize[case-sensitive]
+    'Cantor',
+    'von Neumann',
+    'Mandelbrot'
+    'Willbanks',
+]
+
+# a list to sort case-insensitive
+scientists = [  # pragma: alphabetize[case-insensitive]
+    'von Neumann',
+    'Mandelbrot'
+    'Cantor',
+    'Willbanks',
+]
 """,
     )
 
@@ -213,6 +319,138 @@ animals = [  # pragma: alphabetize
     'Hyena'
     'Lion',
     'Tiger',
+]
+
+# a list to sort with default sorting (case-sensitive)
+scientists = [  # pragma: alphabetize
+    'Cantor',
+    'Mandelbrot'
+    'Willbanks',
+    'von Neumann',
+]
+
+# a list to sort case-sensitive
+scientists = [  # pragma: alphabetize[case-sensitive]
+    'Cantor',
+    'Mandelbrot'
+    'Willbanks',
+    'von Neumann',
+]
+
+# a list to sort case-insensitive
+scientists = [  # pragma: alphabetize[case-insensitive]
+    'Cantor',
+    'Mandelbrot'
+    'von Neumann',
+    'Willbanks',
+]
+"""
+
+
+def test_case_insensitive(tmp_path: Path):
+    file = tmp_path / 't.py'
+    file.write_text(
+        """\
+# a list already sorted
+names = [  # pragma: alphabetize
+    'Alice',
+    'Bob',
+    'Charlie',
+    'David',
+    'Eve',
+]
+
+# a list to keep unsorted
+families = [
+    'Wren',
+    'Lark',
+    'Tarrk',
+]
+
+# a list to sort
+animals = [  # pragma: alphabetize
+    'Tiger',
+    'Hyena'
+    'Elephant',
+    'Lion',
+]
+
+# a list to sort with default sorting (case-insensitive)
+scientists = [  # pragma: alphabetize
+    'von Neumann',
+    'Mandelbrot'
+    'Cantor',
+    'Willbanks',
+]
+
+# a list to sort case-sensitive
+scientists = [  # pragma: alphabetize[case-sensitive]
+    'von Neumann',
+    'Mandelbrot'
+    'Cantor',
+    'Willbanks',
+]
+
+# a list to sort case-insensitive
+scientists = [  # pragma: alphabetize[case-insensitive]
+    'von Neumann',
+    'Mandelbrot'
+    'Cantor',
+    'Willbanks',
+]
+""",
+    )
+
+    ret = main([str(file), '--case-insensitive'])
+
+    assert ret == 1
+    assert file.read_text() == """\
+# a list already sorted
+names = [  # pragma: alphabetize
+    'Alice',
+    'Bob',
+    'Charlie',
+    'David',
+    'Eve',
+]
+
+# a list to keep unsorted
+families = [
+    'Wren',
+    'Lark',
+    'Tarrk',
+]
+
+# a list to sort
+animals = [  # pragma: alphabetize
+    'Elephant',
+    'Hyena'
+    'Lion',
+    'Tiger',
+]
+
+# a list to sort with default sorting (case-insensitive)
+scientists = [  # pragma: alphabetize
+    'Cantor',
+    'Mandelbrot'
+    'von Neumann',
+    'Willbanks',
+]
+
+# a list to sort case-sensitive
+scientists = [  # pragma: alphabetize[case-sensitive]
+    'Cantor',
+    'Mandelbrot'
+    'Willbanks',
+    'von Neumann',
+]
+
+# a list to sort case-insensitive
+scientists = [  # pragma: alphabetize[case-insensitive]
+    'Cantor',
+    'Mandelbrot'
+    'von Neumann',
+    'Willbanks',
 ]
 """
 
