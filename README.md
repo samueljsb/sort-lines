@@ -34,6 +34,19 @@ The first line after the `pragma` comment will set the indentation level
 and every subsequent line with the same amount of indentation will be included in the sorting.
 The first line with a different indentation(including blank lines) will indicate the end of the sorted lines.
 
+Lines can be sorted case-insensitively by using the `[ci]` or `[case-insensitive]` options:
+
+```python
+# names.py
+names = [  # pragma: alphabetize[case-insensitive]
+    'Alice',
+    'bob',
+    'Charlie',
+    'david',
+    'Eve',
+]
+```
+
 ## pre-commit
 
 This tool can be used with [pre-commit](https://pre-commit.com):

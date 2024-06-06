@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Added
+
+- The pragma can be passed options: `pragma: alphabetize[options]`.
+
+  Option                   | Effect
+  ------------------------ | --------------------------------------------
+  `cs`, `case-sensitive`   | all upper-case letters before all lower-case
+  `ci`, `case-insensitive` | sorted without regard for case
+
+  The default behaviour remains case-sensitive.
+
 ## v0.1.2 (2024-01-22)
 
 ### Fixed

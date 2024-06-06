@@ -6,12 +6,22 @@ from collections.abc import Iterator
 from collections.abc import Sequence
 
 
-def get_sorter(line: str) -> Callable[[Sequence[str]], Sequence[str]]:
-    return _case_sensitive_sort
+def _get_sorter(line: str) -> Callable[[Sequence[str]], Sequence[str]]:
+    _, _, options = line.rstrip().partition('# pragma: alphabetize')
+    if options in {'', '[case-sensitive]', '[cs]'}:
+        return _case_sensitive_sort
+    elif options in {'[case-insensitive]', '[ci]'}:
+        return _case_insensitive_sort
+    else:
+        raise ValueError(f'unrecognised options: {options!r}')
 
 
 def _case_sensitive_sort(lines: Sequence[str]) -> list[str]:
     return sorted(lines)
+
+
+def _case_insensitive_sort(lines: Sequence[str]) -> list[str]:
+    return sorted(lines, key=str.casefold)
 
 
 def sort_lines(lines: Sequence[str]) -> Iterator[str]:

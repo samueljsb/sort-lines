@@ -2,8 +2,55 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
+from sort_lines import _case_insensitive_sort
+from sort_lines import _case_sensitive_sort
+from sort_lines import _get_sorter
 from sort_lines import main
 from sort_lines import sort_lines
+
+
+class TestGetSorter:
+    @pytest.mark.parametrize(
+        'line',
+        (
+            # bare pragma
+            '# pragma: alphabetize\n',
+            'some_values = [  # pragma: alphabetize\n',
+            # 'case-insensitive' option
+            '# pragma: alphabetize[case-sensitive]\n',
+            'some_values = [  # pragma: alphabetize[case-sensitive]\n',
+            # 'ci' option
+            '# pragma: alphabetize[cs]\n',
+            'some_values = [  # pragma: alphabetize[cs]\n',
+        ),
+    )
+    def test_case_sensitive(self, line: str) -> None:
+        sorter = _get_sorter(line)
+        assert sorter is _case_sensitive_sort
+
+    @pytest.mark.parametrize(
+        'line',
+        (
+            # 'case-insensitive' option
+            '# pragma: alphabetize[case-insensitive]\n',
+            'some_values = [  # pragma: alphabetize[case-insensitive]\n',
+            # 'ci' option
+            '# pragma: alphabetize[ci]\n',
+            'some_values = [  # pragma: alphabetize[ci]\n',
+        ),
+    )
+    def test_case_insensitive(self, line: str) -> None:
+        sorter = _get_sorter(line)
+        assert sorter is _case_insensitive_sort
+
+    def test_unknown_options(self) -> None:
+        with pytest.raises(
+            ValueError,
+            match=r"unrecognised options: '\[sort-lines\]'",
+        ):
+            _get_sorter('# pragma: alphabetize[sort-lines]\n')
 
 
 class TestSortLines:
@@ -26,6 +73,27 @@ class TestSortLines:
             'Charlie\n',
             'David\n',
             'Eve\n',
+        ]
+
+    def test_case_insensitive(self):
+        lines = [
+            '# pragma: alphabetize[case-insensitive]\n',
+            'Bob\n',
+            'alice\n',
+            'eve\n',
+            'David\n',
+            'charlie\n',
+        ]
+
+        sorted_lines = list(sort_lines(lines))
+
+        assert sorted_lines == [
+            '# pragma: alphabetize[case-insensitive]\n',
+            'alice\n',
+            'Bob\n',
+            'charlie\n',
+            'David\n',
+            'eve\n',
         ]
 
     def test_already_sorted(self):
@@ -184,6 +252,30 @@ animals = [  # pragma: alphabetize
     'Elephant',
     'Lion',
 ]
+
+# a list to sort with default sorting (case-sensitive)
+scientists = [  # pragma: alphabetize
+    'von Neumann',
+    'Mandelbrot'
+    'Cantor',
+    'Willbanks',
+]
+
+# a list to sort case-sensitive
+scientists = [  # pragma: alphabetize[case-sensitive]
+    'Cantor',
+    'von Neumann',
+    'Mandelbrot'
+    'Willbanks',
+]
+
+# a list to sort case-insensitive
+scientists = [  # pragma: alphabetize[case-insensitive]
+    'von Neumann',
+    'Mandelbrot'
+    'Cantor',
+    'Willbanks',
+]
 """,
     )
 
@@ -213,6 +305,30 @@ animals = [  # pragma: alphabetize
     'Hyena'
     'Lion',
     'Tiger',
+]
+
+# a list to sort with default sorting (case-sensitive)
+scientists = [  # pragma: alphabetize
+    'Cantor',
+    'Mandelbrot'
+    'Willbanks',
+    'von Neumann',
+]
+
+# a list to sort case-sensitive
+scientists = [  # pragma: alphabetize[case-sensitive]
+    'Cantor',
+    'Mandelbrot'
+    'Willbanks',
+    'von Neumann',
+]
+
+# a list to sort case-insensitive
+scientists = [  # pragma: alphabetize[case-insensitive]
+    'Cantor',
+    'Mandelbrot'
+    'von Neumann',
+    'Willbanks',
 ]
 """
 
