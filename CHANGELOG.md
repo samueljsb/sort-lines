@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 
+### Changed
+
+- Return 0 when lines have been sorted successfully.
+
+  A non-zero return code is reserved for when the tool has not been able to do its job.
+
 ## v0.2.0 (2024-06-06)
 
 ### Added
