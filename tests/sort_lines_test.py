@@ -295,7 +295,7 @@ scientists = [  # pragma: alphabetize[case-insensitive]
 
     ret = main([str(file)])
 
-    assert ret == 1
+    assert ret == 0
     assert file.read_text() == """\
 # a list already sorted
 names = [  # pragma: alphabetize
@@ -403,7 +403,7 @@ scientists = [  # pragma: alphabetize[case-insensitive]
 
     ret = main([str(file), '--case-insensitive'])
 
-    assert ret == 1
+    assert ret == 0
     assert file.read_text() == """\
 # a list already sorted
 names = [  # pragma: alphabetize
@@ -484,7 +484,7 @@ animals = [  # pragma: alphabetize
 
     ret = main([str(unchanged_file), str(changed_file)])
 
-    assert ret == 1
+    assert ret == 0
     assert unchanged_file.read_text() == """\
 # a list already sorted
 names = [  # pragma: alphabetize

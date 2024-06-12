@@ -77,7 +77,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    ret = 0
     for filename in args.filenames:
         with open(filename) as f:
             src_lines = f.readlines()
@@ -88,9 +87,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             with open(filename, 'w') as f:
                 f.writelines(sorted_lines)
 
-            ret |= 1
-
-    return ret
+    return 0
 
 
 if __name__ == '__main__':
