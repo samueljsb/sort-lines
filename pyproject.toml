@@ -1,0 +1,13 @@
+# Development
+# -----------
+
+[dependency-groups]
+test = [
+  "pytest",
+  "coverage",
+  "covdefaults",
+]
+mypy = [
+  "mypy",
+  {include-group = "test"},
+]
