@@ -1,3 +1,46 @@
+[project]
+name = "sort_lines"
+version = "0.3.0"
+authors = [
+    {name = "Samuel Searles-Bryant", email = "sam@samueljsb.co.uk"},
+]
+description = "alphabetize lines in files"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = [  # pragma: alphabetize
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+sort-lines = "sort_lines:main"
+
+[project.urls]
+Source = "https://github.com/samueljsb/sort-lines"
+Changelog = "https://github.com/samueljsb/sort-lines/blob/main/CHANGELOG.md"
+
+
+# Packaging
+# ---------
+
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# This is the default but we include it to be explicit.
+include-package-data = true
+
+
 # Development
 # -----------
 
@@ -11,3 +54,57 @@ mypy = [
   "mypy",
   {include-group = "test"},
 ]
+
+
+# Mypy
+# ====
+
+[tool.mypy]
+files = "."
+exclude = [
+  "build/",
+  "venv",
+]
+
+pretty = true
+show_error_codes = true
+
+enable_error_code = [  # pragma: alphabetize
+  "ignore-without-code",
+  "possibly-undefined",
+  "truthy-bool",
+  "truthy-iterable",
+]
+strict = true
+ignore_missing_imports = true
+no_implicit_optional = true
+strict_equality = true
+warn_unreachable = true
+warn_no_return = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_incomplete_defs = false
+disallow_untyped_defs = false
+
+
+# Pytest
+# ======
+
+[tool.pytest.ini_options]
+addopts = [
+  "--strict-markers",
+]
+filterwarnings = [
+  "error::DeprecationWarning",
+  "error::SyntaxWarning",
+  "error::pytest.PytestCollectionWarning",
+]
+xfail_strict = true
+
+
+# Coverage
+# ========
+
+[tool.coverage.run]
+plugins = ["covdefaults"]
