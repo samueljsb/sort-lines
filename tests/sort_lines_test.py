@@ -68,7 +68,7 @@ class TestGetSorter:
 
 
 class TestSortLines:
-    def test_sort_lines(self):
+    def test_sort_lines(self) -> None:
         lines = [
             '# pragma: alphabetize\n',
             'Bob\n',
@@ -89,7 +89,7 @@ class TestSortLines:
             'Eve\n',
         ]
 
-    def test_case_insensitive(self):
+    def test_case_insensitive(self) -> None:
         lines = [
             '# pragma: alphabetize[case-insensitive]\n',
             'Bob\n',
@@ -110,7 +110,7 @@ class TestSortLines:
             'eve\n',
         ]
 
-    def test_already_sorted(self):
+    def test_already_sorted(self) -> None:
         lines = [
             '# pragma: alphabetize\n',
             'Alice\n',
@@ -124,7 +124,7 @@ class TestSortLines:
 
         assert sorted_lines == lines
 
-    def test_sorting_stops_when_indentation_changes(self):
+    def test_sorting_stops_when_indentation_changes(self) -> None:
         lines = [
             '# pragma: alphabetize\n',
             '    Bob\n',
@@ -145,7 +145,7 @@ class TestSortLines:
             'Charlie\n',
         ]
 
-    def test_sorting_stops_at_empty_line(self):
+    def test_sorting_stops_at_empty_line(self) -> None:
         lines = [
             '# pragma: alphabetize\n',
             'Bob\n',
@@ -169,7 +169,7 @@ class TestSortLines:
         ]
 
 
-def test_file_needs_no_sorting(tmp_path: Path):
+def test_file_needs_no_sorting(tmp_path: Path) -> None:
     file = tmp_path / 't.py'
     file.write_text(
         """\
@@ -195,7 +195,7 @@ families = [
 """
 
 
-def test_file_already_sorted(tmp_path: Path):
+def test_file_already_sorted(tmp_path: Path) -> None:
     file = tmp_path / 't.py'
     file.write_text(
         """\
@@ -239,7 +239,7 @@ families = [
 """
 
 
-def test_file_changed(tmp_path: Path):
+def test_file_changed(tmp_path: Path) -> None:
     file = tmp_path / 't.py'
     file.write_text(
         """\
@@ -347,7 +347,7 @@ scientists = [  # pragma: alphabetize[case-insensitive]
 """
 
 
-def test_case_insensitive(tmp_path: Path):
+def test_case_insensitive(tmp_path: Path) -> None:
     file = tmp_path / 't.py'
     file.write_text(
         """\
@@ -455,7 +455,7 @@ scientists = [  # pragma: alphabetize[case-insensitive]
 """
 
 
-def test_multiple_files(tmp_path: Path):
+def test_multiple_files(tmp_path: Path) -> None:
     unchanged_file = tmp_path / 'unchanged.py'
     unchanged_file.write_text(
         """\
