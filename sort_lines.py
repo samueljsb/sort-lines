@@ -1,87 +1,115 @@
 from __future__ import annotations
 
 import argparse
+import dataclasses
+import enum
+import sys
 from collections.abc import Iterator
 from collections.abc import Sequence
 from typing import Protocol
 
+print(sys.version_info)
+if sys.version_info < (3, 11):
+    from typing import NoReturn
 
-class Sorter(Protocol):
-    def __call__(self, lines: Sequence[str]) -> Sequence[str]: ...
-
-
-def _get_sorter(line: str, default_sorter: Sorter) -> Sorter:
-    _, _, options = line.rstrip().partition('# pragma: alphabetize')
-    if options == '':
-        return default_sorter
-    if options in {'[case-sensitive]', '[cs]'}:
-        return _case_sensitive_sort
-    elif options in {'[case-insensitive]', '[ci]'}:
-        return _case_insensitive_sort
-    else:
-        raise ValueError(f'unrecognised options: {options!r}')
+    def assert_never(arg: NoReturn) -> None:
+        raise AssertionError(arg)  # pragma: no cover
+else:
+    from typing import assert_never
 
 
-def _case_sensitive_sort(lines: Sequence[str]) -> list[str]:
-    return sorted(lines)
+class CaseSensitivity(enum.Enum):
+    CASE_INSENSITIVE = enum.auto()
+    CASE_SENSITIVE = enum.auto()
 
 
-def _case_insensitive_sort(lines: Sequence[str]) -> list[str]:
-    return sorted(lines, key=str.casefold)
+@dataclasses.dataclass(frozen=True)
+class NaiveSorter:
+    case: CaseSensitivity = CaseSensitivity.CASE_SENSITIVE
 
+    class _SortFn(Protocol):
+        def __call__(self, lines: Sequence[str]) -> Sequence[str]: ...
 
-def sort_lines(
-        lines: Sequence[str], default_sorter: Sorter = _case_sensitive_sort,
-) -> Iterator[str]:
-    sorter: Sorter | None = None
-    indentation: str | None = None
-    to_sort: list[str] = []
-    for line in lines:
-        if sorter:
-            if indentation is None:  # first line
-                indentation = line.removesuffix(line.lstrip())
-                to_sort.append(line)
-                continue
-            elif line.strip() and line.startswith(indentation):  # line to sort
-                to_sort.append(line)
-                continue
-            else:  # sorting has ended
+    def __call__(
+            self, lines: Sequence[str],
+    ) -> Iterator[str]:
+        sorter: NaiveSorter._SortFn | None = None
+        indentation: str | None = None
+        to_sort: list[str] = []
+        for line in lines:
+            if sorter:
+                if indentation is None:  # first line
+                    indentation = line.removesuffix(line.lstrip())
+                    to_sort.append(line)
+                    continue
+                elif line.strip() and line.startswith(indentation):  # line to sort
+                    to_sort.append(line)
+                    continue
+                else:  # sorting has ended
+                    yield from sorter(to_sort)
+                    sorter = None
+
+            if '# pragma: alphabetize' in line:  # start sorting
+                sorter = self._get_sorter(line)
+                to_sort = []
+                indentation = None  # not known yet
+
+            yield line
+        else:
+            if sorter:  # file ended during sorting
                 yield from sorter(to_sort)
-                sorter = None
 
-        if '# pragma: alphabetize' in line:  # start sorting
-            sorter = _get_sorter(line, default_sorter)
-            to_sort = []
-            indentation = None  # not known yet
+    def _get_sorter(self, line: str) -> NaiveSorter._SortFn:
+        _, _, options = line.rstrip().partition('# pragma: alphabetize')
+        if options == '':
+            if self.case is CaseSensitivity.CASE_INSENSITIVE:
+                return self._case_insensitive_sort
+            elif self.case is CaseSensitivity.CASE_SENSITIVE:
+                return self._case_sensitive_sort
+            else:
+                assert_never(self.case)
+        if options in {'[case-sensitive]', '[cs]'}:
+            return self._case_sensitive_sort
+        elif options in {'[case-insensitive]', '[ci]'}:
+            return self._case_insensitive_sort
+        else:
+            raise ValueError(f'unrecognised options: {options!r}')
 
-        yield line
-    else:
-        if sorter:  # file ended during sorting
-            yield from sorter(to_sort)
+    @staticmethod
+    def _case_sensitive_sort(lines: Sequence[str]) -> list[str]:
+        return sorted(lines)
+
+    @staticmethod
+    def _case_insensitive_sort(lines: Sequence[str]) -> list[str]:
+        return sorted(lines, key=str.casefold)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('filenames', nargs='*')
     case_mutex = parser.add_mutually_exclusive_group()
-    case_mutex.set_defaults(default_sorter=_case_sensitive_sort)
+    case_mutex.set_defaults(case_sensitivity=CaseSensitivity.CASE_SENSITIVE)
     case_mutex.add_argument(
         '--case-sensitive',
         help='sort lines case-sensitively by default (default)',
-        action='store_const', dest='default_sorter', const=_case_sensitive_sort,
+        action='store_const', dest='case_sensitivity',
+        const=CaseSensitivity.CASE_SENSITIVE,
     )
     case_mutex.add_argument(
         '--case-insensitive',
         help='sort lines case-insensitively by default',
-        action='store_const', dest='default_sorter', const=_case_insensitive_sort,
+        action='store_const', dest='case_sensitivity',
+        const=CaseSensitivity.CASE_INSENSITIVE,
     )
     args = parser.parse_args(argv)
+
+    sorter = NaiveSorter(case=args.case_sensitivity)
 
     for filename in args.filenames:
         with open(filename) as f:
             src_lines = f.readlines()
 
-        sorted_lines = list(sort_lines(src_lines, default_sorter=args.default_sorter))
+        sorted_lines = list(sorter(src_lines))
 
         if sorted_lines != src_lines:
             with open(filename, 'w') as f:

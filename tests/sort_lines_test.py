@@ -1,22 +1,15 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from pathlib import Path
 
 import pytest
 
-from sort_lines import _case_insensitive_sort
-from sort_lines import _case_sensitive_sort
-from sort_lines import _get_sorter
+from sort_lines import CaseSensitivity
 from sort_lines import main
-from sort_lines import sort_lines
+from sort_lines import NaiveSorter
 
 
-def _default_sorter(lines: Sequence[str]) -> list[str]:
-    raise RuntimeError  # should never use this  # pragma: no cover
-
-
-class TestGetSorter:
+class TestNaiveSorter_GetSorter:
     @pytest.mark.parametrize(
         'line',
         (
@@ -25,9 +18,24 @@ class TestGetSorter:
             'some_values = [  # pragma: alphabetize\n',
         ),
     )
-    def test_default_sorter(self, line: str) -> None:
-        sorter = _get_sorter(line, _default_sorter)
-        assert sorter is _default_sorter
+    @pytest.mark.parametrize(
+        ('case_sensitivity', 'expected_sorter'),
+        (
+            pytest.param(
+                CaseSensitivity.CASE_INSENSITIVE, NaiveSorter._case_insensitive_sort,
+                id='case-insensitive',
+            ),
+            pytest.param(
+                CaseSensitivity.CASE_SENSITIVE, NaiveSorter._case_sensitive_sort,
+                id='case-sensitive',
+            ),
+        ),
+    )
+    def test_default_sorter(
+        self, case_sensitivity: CaseSensitivity, line: str, expected_sorter: object,
+    ) -> None:
+        sorter = NaiveSorter(case=case_sensitivity)._get_sorter(line)
+        assert sorter is expected_sorter
 
     @pytest.mark.parametrize(
         'line',
@@ -41,8 +49,8 @@ class TestGetSorter:
         ),
     )
     def test_case_sensitive(self, line: str) -> None:
-        sorter = _get_sorter(line, _default_sorter)
-        assert sorter is _case_sensitive_sort
+        sorter = NaiveSorter()._get_sorter(line)
+        assert sorter is NaiveSorter._case_sensitive_sort
 
     @pytest.mark.parametrize(
         'line',
@@ -56,18 +64,18 @@ class TestGetSorter:
         ),
     )
     def test_case_insensitive(self, line: str) -> None:
-        sorter = _get_sorter(line, _default_sorter)
-        assert sorter is _case_insensitive_sort
+        sorter = NaiveSorter()._get_sorter(line)
+        assert sorter is NaiveSorter._case_insensitive_sort
 
     def test_unknown_options(self) -> None:
         with pytest.raises(
             ValueError,
             match=r"unrecognised options: '\[sort-lines\]'",
         ):
-            _get_sorter('# pragma: alphabetize[sort-lines]\n', _default_sorter)
+            NaiveSorter()._get_sorter('# pragma: alphabetize[sort-lines]\n')
 
 
-class TestSortLines:
+class TestNaiveSorter:
     def test_sort_lines(self) -> None:
         lines = [
             '# pragma: alphabetize\n',
@@ -78,7 +86,8 @@ class TestSortLines:
             'Charlie\n',
         ]
 
-        sorted_lines = list(sort_lines(lines))
+        sort = NaiveSorter()
+        sorted_lines = list(sort(lines))
 
         assert sorted_lines == [
             '# pragma: alphabetize\n',
@@ -99,7 +108,8 @@ class TestSortLines:
             'charlie\n',
         ]
 
-        sorted_lines = list(sort_lines(lines))
+        sort = NaiveSorter()
+        sorted_lines = list(sort(lines))
 
         assert sorted_lines == [
             '# pragma: alphabetize[case-insensitive]\n',
@@ -120,7 +130,8 @@ class TestSortLines:
             'Eve\n',
         ]
 
-        sorted_lines = list(sort_lines(lines))
+        sort = NaiveSorter()
+        sorted_lines = list(sort(lines))
 
         assert sorted_lines == lines
 
@@ -134,7 +145,8 @@ class TestSortLines:
             'Charlie\n',
         ]
 
-        sorted_lines = list(sort_lines(lines))
+        sort = NaiveSorter()
+        sorted_lines = list(sort(lines))
 
         assert sorted_lines == [
             '# pragma: alphabetize\n',
@@ -156,7 +168,8 @@ class TestSortLines:
             'Charlie\n',
         ]
 
-        sorted_lines = list(sort_lines(lines))
+        sort = NaiveSorter()
+        sorted_lines = list(sort(lines))
 
         assert sorted_lines == [
             '# pragma: alphabetize\n',
