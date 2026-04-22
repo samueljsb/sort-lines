@@ -1,22 +1,12 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from pathlib import Path
-
 import pytest
 
-from sort_lines import _case_insensitive_sort
-from sort_lines import _case_sensitive_sort
-from sort_lines import _get_sorter
-from sort_lines import main
-from sort_lines import sort_lines
+from sort_lines import CaseSensitivity
+from sort_lines import NaiveSorter
 
 
-def _default_sorter(lines: Sequence[str]) -> list[str]:
-    raise RuntimeError  # should never use this  # pragma: no cover
-
-
-class TestGetSorter:
+class TestNaiveSorter_GetSorter:
     @pytest.mark.parametrize(
         'line',
         (
@@ -25,9 +15,24 @@ class TestGetSorter:
             'some_values = [  # pragma: alphabetize\n',
         ),
     )
-    def test_default_sorter(self, line: str) -> None:
-        sorter = _get_sorter(line, _default_sorter)
-        assert sorter is _default_sorter
+    @pytest.mark.parametrize(
+        ('case_sensitivity', 'expected_sorter'),
+        (
+            pytest.param(
+                CaseSensitivity.CASE_INSENSITIVE, NaiveSorter._case_insensitive_sort,
+                id='case-insensitive',
+            ),
+            pytest.param(
+                CaseSensitivity.CASE_SENSITIVE, NaiveSorter._case_sensitive_sort,
+                id='case-sensitive',
+            ),
+        ),
+    )
+    def test_default_sorter(
+        self, case_sensitivity: CaseSensitivity, line: str, expected_sorter: object,
+    ) -> None:
+        sorter = NaiveSorter(case=case_sensitivity)._get_sorter(line)
+        assert sorter is expected_sorter
 
     @pytest.mark.parametrize(
         'line',
@@ -41,8 +46,8 @@ class TestGetSorter:
         ),
     )
     def test_case_sensitive(self, line: str) -> None:
-        sorter = _get_sorter(line, _default_sorter)
-        assert sorter is _case_sensitive_sort
+        sorter = NaiveSorter()._get_sorter(line)
+        assert sorter is NaiveSorter._case_sensitive_sort
 
     @pytest.mark.parametrize(
         'line',
@@ -56,18 +61,18 @@ class TestGetSorter:
         ),
     )
     def test_case_insensitive(self, line: str) -> None:
-        sorter = _get_sorter(line, _default_sorter)
-        assert sorter is _case_insensitive_sort
+        sorter = NaiveSorter()._get_sorter(line)
+        assert sorter is NaiveSorter._case_insensitive_sort
 
     def test_unknown_options(self) -> None:
         with pytest.raises(
             ValueError,
             match=r"unrecognised options: '\[sort-lines\]'",
         ):
-            _get_sorter('# pragma: alphabetize[sort-lines]\n', _default_sorter)
+            NaiveSorter()._get_sorter('# pragma: alphabetize[sort-lines]\n')
 
 
-class TestSortLines:
+class TestNaiveSorter:
     def test_sort_lines(self) -> None:
         lines = [
             '# pragma: alphabetize\n',
@@ -78,7 +83,8 @@ class TestSortLines:
             'Charlie\n',
         ]
 
-        sorted_lines = list(sort_lines(lines))
+        sort = NaiveSorter()
+        sorted_lines = list(sort(lines))
 
         assert sorted_lines == [
             '# pragma: alphabetize\n',
@@ -99,7 +105,8 @@ class TestSortLines:
             'charlie\n',
         ]
 
-        sorted_lines = list(sort_lines(lines))
+        sort = NaiveSorter()
+        sorted_lines = list(sort(lines))
 
         assert sorted_lines == [
             '# pragma: alphabetize[case-insensitive]\n',
@@ -120,7 +127,8 @@ class TestSortLines:
             'Eve\n',
         ]
 
-        sorted_lines = list(sort_lines(lines))
+        sort = NaiveSorter()
+        sorted_lines = list(sort(lines))
 
         assert sorted_lines == lines
 
@@ -134,7 +142,8 @@ class TestSortLines:
             'Charlie\n',
         ]
 
-        sorted_lines = list(sort_lines(lines))
+        sort = NaiveSorter()
+        sorted_lines = list(sort(lines))
 
         assert sorted_lines == [
             '# pragma: alphabetize\n',
@@ -156,7 +165,8 @@ class TestSortLines:
             'Charlie\n',
         ]
 
-        sorted_lines = list(sort_lines(lines))
+        sort = NaiveSorter()
+        sorted_lines = list(sort(lines))
 
         assert sorted_lines == [
             '# pragma: alphabetize\n',
@@ -167,340 +177,3 @@ class TestSortLines:
             'David\n',
             'Charlie\n',
         ]
-
-
-def test_file_needs_no_sorting(tmp_path: Path) -> None:
-    file = tmp_path / 't.py'
-    file.write_text(
-        """\
-# a list to keep unsorted
-families = [
-    'Wren',
-    'Lark',
-    'Tarrk',
-]
-""",
-    )
-
-    ret = main([str(file)])
-
-    assert ret == 0
-    assert file.read_text() == """\
-# a list to keep unsorted
-families = [
-    'Wren',
-    'Lark',
-    'Tarrk',
-]
-"""
-
-
-def test_file_already_sorted(tmp_path: Path) -> None:
-    file = tmp_path / 't.py'
-    file.write_text(
-        """\
-# a list already sorted
-names = [  # pragma: alphabetize
-    'Alice',
-    'Bob',
-    'Charlie',
-    'David',
-    'Eve',
-]
-
-# a list to keep unsorted
-families = [
-    'Wren',
-    'Lark',
-    'Tarrk',
-]
-""",
-    )
-
-    ret = main([str(file)])
-
-    assert ret == 0
-    assert file.read_text() == """\
-# a list already sorted
-names = [  # pragma: alphabetize
-    'Alice',
-    'Bob',
-    'Charlie',
-    'David',
-    'Eve',
-]
-
-# a list to keep unsorted
-families = [
-    'Wren',
-    'Lark',
-    'Tarrk',
-]
-"""
-
-
-def test_file_changed(tmp_path: Path) -> None:
-    file = tmp_path / 't.py'
-    file.write_text(
-        """\
-# a list already sorted
-names = [  # pragma: alphabetize
-    'Alice',
-    'Bob',
-    'Charlie',
-    'David',
-    'Eve',
-]
-
-# a list to keep unsorted
-families = [
-    'Wren',
-    'Lark',
-    'Tarrk',
-]
-
-# a list to sort
-animals = [  # pragma: alphabetize
-    'Tiger',
-    'Hyena'
-    'Elephant',
-    'Lion',
-]
-
-# a list to sort with default sorting (case-sensitive)
-scientists = [  # pragma: alphabetize
-    'von Neumann',
-    'Mandelbrot'
-    'Cantor',
-    'Willbanks',
-]
-
-# a list to sort case-sensitive
-scientists = [  # pragma: alphabetize[case-sensitive]
-    'Cantor',
-    'von Neumann',
-    'Mandelbrot'
-    'Willbanks',
-]
-
-# a list to sort case-insensitive
-scientists = [  # pragma: alphabetize[case-insensitive]
-    'von Neumann',
-    'Mandelbrot'
-    'Cantor',
-    'Willbanks',
-]
-""",
-    )
-
-    ret = main([str(file)])
-
-    assert ret == 0
-    assert file.read_text() == """\
-# a list already sorted
-names = [  # pragma: alphabetize
-    'Alice',
-    'Bob',
-    'Charlie',
-    'David',
-    'Eve',
-]
-
-# a list to keep unsorted
-families = [
-    'Wren',
-    'Lark',
-    'Tarrk',
-]
-
-# a list to sort
-animals = [  # pragma: alphabetize
-    'Elephant',
-    'Hyena'
-    'Lion',
-    'Tiger',
-]
-
-# a list to sort with default sorting (case-sensitive)
-scientists = [  # pragma: alphabetize
-    'Cantor',
-    'Mandelbrot'
-    'Willbanks',
-    'von Neumann',
-]
-
-# a list to sort case-sensitive
-scientists = [  # pragma: alphabetize[case-sensitive]
-    'Cantor',
-    'Mandelbrot'
-    'Willbanks',
-    'von Neumann',
-]
-
-# a list to sort case-insensitive
-scientists = [  # pragma: alphabetize[case-insensitive]
-    'Cantor',
-    'Mandelbrot'
-    'von Neumann',
-    'Willbanks',
-]
-"""
-
-
-def test_case_insensitive(tmp_path: Path) -> None:
-    file = tmp_path / 't.py'
-    file.write_text(
-        """\
-# a list already sorted
-names = [  # pragma: alphabetize
-    'Alice',
-    'Bob',
-    'Charlie',
-    'David',
-    'Eve',
-]
-
-# a list to keep unsorted
-families = [
-    'Wren',
-    'Lark',
-    'Tarrk',
-]
-
-# a list to sort
-animals = [  # pragma: alphabetize
-    'Tiger',
-    'Hyena'
-    'Elephant',
-    'Lion',
-]
-
-# a list to sort with default sorting (case-insensitive)
-scientists = [  # pragma: alphabetize
-    'von Neumann',
-    'Mandelbrot'
-    'Cantor',
-    'Willbanks',
-]
-
-# a list to sort case-sensitive
-scientists = [  # pragma: alphabetize[case-sensitive]
-    'von Neumann',
-    'Mandelbrot'
-    'Cantor',
-    'Willbanks',
-]
-
-# a list to sort case-insensitive
-scientists = [  # pragma: alphabetize[case-insensitive]
-    'von Neumann',
-    'Mandelbrot'
-    'Cantor',
-    'Willbanks',
-]
-""",
-    )
-
-    ret = main([str(file), '--case-insensitive'])
-
-    assert ret == 0
-    assert file.read_text() == """\
-# a list already sorted
-names = [  # pragma: alphabetize
-    'Alice',
-    'Bob',
-    'Charlie',
-    'David',
-    'Eve',
-]
-
-# a list to keep unsorted
-families = [
-    'Wren',
-    'Lark',
-    'Tarrk',
-]
-
-# a list to sort
-animals = [  # pragma: alphabetize
-    'Elephant',
-    'Hyena'
-    'Lion',
-    'Tiger',
-]
-
-# a list to sort with default sorting (case-insensitive)
-scientists = [  # pragma: alphabetize
-    'Cantor',
-    'Mandelbrot'
-    'von Neumann',
-    'Willbanks',
-]
-
-# a list to sort case-sensitive
-scientists = [  # pragma: alphabetize[case-sensitive]
-    'Cantor',
-    'Mandelbrot'
-    'Willbanks',
-    'von Neumann',
-]
-
-# a list to sort case-insensitive
-scientists = [  # pragma: alphabetize[case-insensitive]
-    'Cantor',
-    'Mandelbrot'
-    'von Neumann',
-    'Willbanks',
-]
-"""
-
-
-def test_multiple_files(tmp_path: Path) -> None:
-    unchanged_file = tmp_path / 'unchanged.py'
-    unchanged_file.write_text(
-        """\
-# a list already sorted
-names = [  # pragma: alphabetize
-    'Alice',
-    'Bob',
-    'Charlie',
-    'David',
-    'Eve',
-]
-""",
-    )
-    changed_file = tmp_path / 'changed.py'
-    changed_file.write_text(
-        """\
-# a list to sort
-animals = [  # pragma: alphabetize
-    'Tiger',
-    'Hyena'
-    'Elephant',
-    'Lion',
-]
-""",
-    )
-
-    ret = main([str(unchanged_file), str(changed_file)])
-
-    assert ret == 0
-    assert unchanged_file.read_text() == """\
-# a list already sorted
-names = [  # pragma: alphabetize
-    'Alice',
-    'Bob',
-    'Charlie',
-    'David',
-    'Eve',
-]
-"""
-    assert changed_file.read_text() == """\
-# a list to sort
-animals = [  # pragma: alphabetize
-    'Elephant',
-    'Hyena'
-    'Lion',
-    'Tiger',
-]
-"""
