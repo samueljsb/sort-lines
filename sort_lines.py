@@ -8,7 +8,6 @@ from collections.abc import Iterator
 from collections.abc import Sequence
 from typing import Protocol
 
-print(sys.version_info)
 if sys.version_info < (3, 11):
     from typing import NoReturn
 
