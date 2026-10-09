@@ -3,18 +3,10 @@ from __future__ import annotations
 import argparse
 import dataclasses
 import enum
-import sys
 from collections.abc import Iterator
 from collections.abc import Sequence
+from typing import assert_never
 from typing import Protocol
-
-if sys.version_info < (3, 11):
-    from typing import NoReturn
-
-    def assert_never(arg: NoReturn) -> None:
-        raise AssertionError(arg)  # pragma: no cover
-else:
-    from typing import assert_never
 
 
 class CaseSensitivity(enum.Enum):
